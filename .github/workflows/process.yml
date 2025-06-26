@@ -2,7 +2,7 @@ name: Process YouTube Subtitles Weekly
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # Every Sunday at midnight
+    - cron: "0 0 * * 0" # Every Sunday at midnight
   workflow_dispatch:
 
 jobs:
@@ -20,6 +20,9 @@ jobs:
         run: |
           pip install -r requirements.txt
           python -m spacy download zh_core_web_sm
+          python -m spacy download ja_core_news_sm
+          python -m spacy download es_core_news_sm
+
           sudo apt-get install -y ffmpeg
 
       - name: Run batch processor

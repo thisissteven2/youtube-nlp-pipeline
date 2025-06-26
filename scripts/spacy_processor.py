@@ -1,9 +1,27 @@
 import spacy
 from pypinyin import pinyin, Style
 
-nlp = spacy.load("zh_core_web_sm")
 
-def process_subtitle_file(vtt_file):
+# Map langCode_G to spaCy model names
+LANG_MODEL_MAP = {
+    "zh-CN": "zh_core_web_sm",
+    "zh-TW": "zh_core_web_sm",  # still simplified model unless you switch to Jieba or CKIP
+    "ja": "ja_core_news_sm",
+    "ko": "ko_core_news_sm",  # this doesn’t exist in spaCy; need external lib
+    "es": "es_core_news_sm"
+}
+
+
+def get_nlp(lang_code: str):
+    model_name = LANG_MODEL_MAP.get(lang_code)
+    if model_name:
+        return spacy.load(model_name)
+    else:
+        raise ValueError(f"Unsupported language code: {lang_code}")
+
+
+def process_subtitle_file(vtt_file, lang_code):
+    nlp = get_nlp(lang_code)
     with open(vtt_file, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
@@ -23,8 +41,13 @@ def process_subtitle_file(vtt_file):
             tokens = []
             doc = nlp(text)
             for token in doc:
-                py = pinyin(token.text, style=Style.TONE3, heteronym=True)
-                tones = [int(s[-1]) if s[-1].isdigit() else 0 for s in py[0]]
+                if lang_code.startswith("zh"):
+                    py = pinyin(token.text, style=Style.TONE3, heteronym=True)
+                    tones = [int(s[-1]) if s[-1].isdigit()
+                             else 0 for s in py[0]]
+                else:
+                    py = [""]
+                    tones = []
                 tokens.append({
                     "deprel": token.dep_,
                     "feats": token.morph.to_json() or None,
@@ -33,9 +56,9 @@ def process_subtitle_file(vtt_file):
                         "pinyin": py[0],
                         "tones": tones
                     },
-                    "form_norm": {
-                        "text": token.lemma_,
-                        "pinyin": pinyin(token.lemma_, style=Style.TONE3, heteronym=True)[0],
+                    "form": {
+                        "text": token.text,
+                        "pinyin": py[0],
                         "tones": tones
                     },
                     "pointer": None,
