@@ -24,10 +24,6 @@ jobs:
           python -m spacy download es_core_news_sm
           sudo apt-get install -y ffmpeg
 
-      - name: Install Korean NLP dependencies
-        run: |
-          sudo apt-get install -y default-jre  # required for KoNLPy
-
       - name: Run batch processor
         run: |
           python scripts/run_batch.py
